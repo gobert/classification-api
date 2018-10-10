@@ -1,0 +1,22 @@
+# classification-api
+A service that stores results from a classification service in a database and make them available through a REST API. It is meant to run on the edge, that is, a computing device that is deployed in a factory.
+
+
+## Installation
+* Install Docker
+* Build docker image with `docker build -t classification-api:0.1 .`
+
+* Install postgresql on docker: ```
+docker network create --driver bridge postgres-network
+```
+
+## Run the tests
+```
+docker-compose up
+```
+
+## Start server locally
+Currently not implemented
+
+## Deploy (to production)
+Currently not implemented
