@@ -1,11 +1,15 @@
 import os
 from application import Application
 app = Application.get_instance('test')
+app.drop_db_if_exist()
 app.init_db()
-from classification_api import Picture, Algorithm, Prediction
+from data_models import Picture, Algorithm, Prediction
+from controllers import flask_app
 import pytest
 from freezegun import freeze_time
 import datetime
+import tempfile
+import json
 
 
 class TestPicture():
@@ -31,6 +35,10 @@ class TestPicture():
         now.start()
         assert Picture.create().created_at ==datetime.datetime(2018, 10, 11, 11, 26, 1)
         now.stop()
+
+    def test_find_by(self, image_id, image_path):
+        Picture.create(image_id=image_id, image_path=image_path)
+        assert Picture.find_by(image_id=image_id).image_id == image_id
 
 
 class TestAlgorithm():
@@ -95,3 +103,68 @@ class TestPrediction():
         prediction = Prediction.create(picture_id=picture.id)
         assert prediction.picture == picture
         assert picture.predictions[-1] == prediction
+
+
+class TestControllers():
+    @pytest.fixture
+    def client(self):
+        flask_app.config['TESTING'] = True
+        client = flask_app.test_client()
+        yield client
+
+    def test_root(self, client):
+        rv = client.get('/')
+        links = json.loads(rv.data)['links']
+        assert links[0] == '/'
+        assert links[1] == '/_/health'
+        assert links[2] == '/v1/picture/<picture_id>'
+        assert links[3] == '/v1/algorithm/<name>?version=<version>'
+        assert links[4] == '/v1/predictions/<picture_id>'
+        assert links[5] == '/v1/predictions/weak'
+
+    def test_health(self, client):
+        rv = client.get('/_/health')
+        body = json.loads(rv.data)
+        assert body['status'] == 'OK'
+        assert body['version'] == app.version()
+
+    def test_get_picture(self, client):
+        picture = Picture.create(image_path='20181012/foobar.jpg', image_id='foobar.jpg')
+        body = json.loads(client.get('/v1/picture/%s' % picture.image_id).data)
+        assert body['image_path'] == '20181012/foobar.jpg'
+        assert body['image_id'] == 'foobar.jpg'
+
+    def test_get_algorithm(self, client):
+        algorithm = Algorithm.create(name='DeevioNet', version='1.1')
+        body = json.loads(client.get('/v1/algorithm/' + algorithm.name + '?version=' + algorithm.version).data)
+        assert body['name'] == 'DeevioNet'
+        assert body['version'] == '1.1'
+
+    def test_predictions_by_image_id(self, client):
+        picture = Picture.create(image_id='foobar.jpg')
+        algorithm = Algorithm.create(name='DeevioNet', version='1.1')
+        prediction = Prediction.create(picture_id=picture.id, algorithm_id=algorithm.id, proba=0.99, status='complete', label='nail', result='good', bbox=[100, 200, 500, 500])
+
+        body = json.loads(client.get('/v1/predictions/%s' % picture.id).data)
+
+        assert body['probability'] == prediction.proba
+        assert body['status'] == prediction.status
+        assert body['label'] == prediction.label
+        assert body['result'] == prediction.result
+        assert body['bbox'] == prediction.bbox
+        assert body['algorithm']['type'] == 'GET'
+        assert body['algorithm']['rel'] == 'algorithm'
+        assert body['algorithm']['href'] == '/v1/algorithm/DeevioNet?version=1.1'
+        assert body['picture']['type'] == 'GET'
+        assert body['picture']['rel'] == 'picture'
+        assert body['picture']['href'] == '/v1/picture/foobar.jpg'
+
+    def test_predictions_weak(self, client):
+        picture = Picture.create(image_id='foobar.jpg')
+        algorithm = Algorithm.create(name='DeevioNet', version='1.1')
+        prediction = Prediction.create(picture_id=picture.id, algorithm_id=algorithm.id, proba=0.69)
+        prediction = Prediction.create(picture_id=picture.id, algorithm_id=algorithm.id, proba=0.7)
+
+        body = json.loads(client.get('/v1/predictions/weak').data)
+
+        assert len(body) == 1

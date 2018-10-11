@@ -3,7 +3,7 @@ import sqlalchemy
 
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy_utils.functions import create_database
+from sqlalchemy_utils.functions import create_database, drop_database
 
 
 class Application:
@@ -40,13 +40,38 @@ class Application:
         # they will be registered properly on the metadata.  Otherwise
         # you will have to import them first before calling init_db()
         try:
-            from classification_api import Picture, Algorithm, Prediction
+            from data_models import Picture, Algorithm, Prediction
             self.Base.metadata.create_all(bind=self.engine)
         except sqlalchemy.exc.OperationalError as e:
             # create DB if it does not exist
             db_not_exist = ('FATAL:  database "%s" does not exist' % self.db_name in str(e))
             if db_not_exist:
-                create_database(self.db_url)
+                self.create_db()
                 self.Base.metadata.create_all(bind=self.engine)
             else:
                 raise e
+
+    def create_db(self):
+        create_database(self.db_url)
+
+    def drop_db_if_exist(self):
+        if self.environment != 'test':
+            raise "Drop DB? Not sure in %s env. Do it manually!" % self.environment
+        try:
+            drop_database(self.db_url)
+        except sqlalchemy.exc.ProgrammingError as e:
+            db_not_exist = 'database "%s" does not exist' % self.db_name in str(e)
+            if not db_not_exist:
+                raise e
+
+
+    def version(self):
+        return 'v1'
+
+    def postgresql_status(self):
+        try:
+            from data_models import Prediction
+            Prediction.first()
+            return 'OK'
+        except:
+            return 'failure'

@@ -6,9 +6,24 @@ services:
     ports:
     - 5432:5432
 
-  classificiation-api:
+  pytest:
     build: .
     volumes:
       - ./:/app
     depends_on:
       - postgres
+    command:
+      - sh
+      - -c
+      - pytest -- tests.py
+
+  api:
+    build: .
+    volumes:
+      - ./:/app
+    depends_on:
+      - postgres
+    command:
+      - sh
+      - -c
+      - flask run --host=0.0.0.0

@@ -15,5 +15,3 @@ COPY . /app
 # Install dependencies
 RUN pip install -r requirements-dev.txt
 RUN pip install -r requirements-common.txt
-
-CMD ["pytest", "--", "tests.py"]

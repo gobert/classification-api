@@ -1,3 +1,5 @@
 sqlalchemy==1.2.12
 sqlalchemy-utils==0.33.5
 psycopg2==2.7.5
+flask==1.0.2
+paho-mqtt==1.4.0
