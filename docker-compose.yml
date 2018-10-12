@@ -5,6 +5,10 @@ services:
     image: postgres:alpine
     ports:
     - 5432:5432
+  mosquitto:
+    image: trafex/alpine-mosquitto
+    ports:
+    - 1883:1883
 
   pytest:
     build: .
@@ -12,6 +16,7 @@ services:
       - ./:/app
     depends_on:
       - postgres
+      - mosquitto
     command:
       - sh
       - -c
@@ -27,3 +32,14 @@ services:
       - sh
       - -c
       - flask run --host=0.0.0.0
+
+  consumer:
+    build: .
+    volumes:
+      - ./:/app
+    depends_on:
+      - mosquitto
+    command:
+      - sh
+      - -c
+      - python consumer.py

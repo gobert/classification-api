@@ -1,5 +1,6 @@
 from application import Application
 import datetime
+import json
 
 from sqlalchemy import Table, Column, Integer, Float, String, ForeignKey, DateTime, ARRAY
 from sqlalchemy.orm import relationship
@@ -111,6 +112,25 @@ class Prediction(app.Base):
         self.algorithm_id = algorithm_id
         self.picture_id = picture_id
         self.status = status
+
+    @classmethod
+    def create_from_mq(cls, mq_payload):
+        payload = json.loads(mq_payload)
+        algorithm = Algorithm.find_by(name=payload['algorithm']['name'], version=payload['algorithm']['version'])
+        if not algorithm:
+            algorithm = Algorithm.create(name=payload['algorithm']['name'], version=payload['algorithm']['version'])
+        picture = Picture.find_by(image_id=payload['imageId'])
+        if not picture:
+            picture = Picture.create(image_id=payload['imageId'], image_path=payload['imagePath'])
+        for o in payload['output']:
+            cls.create(
+                proba=o['probability'],
+                bbox=o['bbox'],
+                label=o['label'],
+                result=o['result'],
+                algorithm_id=algorithm.id,
+                picture_id=picture.id
+            )
 
     @classmethod
     def create(cls, proba=None, label=None, result=None, bbox=None, algorithm_id=None, picture_id=None, status=None):

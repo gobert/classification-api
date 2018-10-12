@@ -15,10 +15,14 @@ docker network create --driver bridge postgres-network
 docker-compose pytest
 ```
 
-## Start server locally
-```
+## Start locally
+* Start web server `
   docker-compose run -e FLASK_APP=controllers.py -e FLASK_ENV=development -p 5000:5000 api
-```
+`
+* Start message queue consumer `
+  docker-compose run consumer
+`
+
 
 ## Deploy (to production)
 Currently not implemented

@@ -104,6 +104,10 @@ class TestPrediction():
         assert prediction.picture == picture
         assert picture.predictions[-1] == prediction
 
+    def test_prediction_create_from_mq(self):
+        payload = '{"algorithm": {"name": "DeevioNet","version": "1.0"},"status":"complete","imagePath":"20180907/1536311270718.jpg","imageId":"1536311270718","output":[{"bbox":[1008.8831787109375,280.6226501464844,1110.0245361328125,380.72021484375],"probability":0.9725130796432495,"label":"nail","result":"good"} ]}'
+        Prediction.create_from_mq(payload)
+
 
 class TestControllers():
     @pytest.fixture
