@@ -149,7 +149,7 @@ class TestControllers():
         algorithm = Algorithm.create(name='DeevioNet', version='1.1')
         prediction = Prediction.create(picture_id=picture.id, algorithm_id=algorithm.id, proba=0.99, status='complete', label='nail', result='good', bbox=[100, 200, 500, 500])
 
-        body = json.loads(client.get('/v1/predictions/%s' % picture.id).data)
+        body = json.loads(client.get('/v1/predictions/%s' % 'foobar.jpg').data)
 
         assert body['probability'] == prediction.proba
         assert body['status'] == prediction.status

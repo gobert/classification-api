@@ -46,7 +46,8 @@ def algorithm(name):
 
 @flask_app.route('/v1/predictions/<image_id>')
 def predictions(image_id):
-    prediction = Prediction.find_by(picture_id=image_id)
+    picture = Picture.find_by(image_id=image_id)
+    prediction = Prediction.find_by(picture_id=picture.id)
     return jsonify(PredictionPresenter(prediction).to_dict())
 
 
