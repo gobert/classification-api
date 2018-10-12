@@ -4,9 +4,10 @@ A service that stores results from a classification service in a database and ma
 
 ## Installation
 * Install Docker
-* Build docker image with `docker build -t classification-api:0.1 .`
+* Build docker image with `docker-compose build`
 
-* Install postgresql on docker: ```
+* Install postgresql on docker:
+```
 docker network create --driver bridge postgres-network
 ```
 
